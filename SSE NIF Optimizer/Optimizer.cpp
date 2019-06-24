@@ -60,7 +60,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer.txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.0.8 by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.0.9 by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -203,7 +203,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 				}
 			}
 
-			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.0.8.");
+			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.0.9.");
 			nif.FinalizeData();
 
 			NifSaveOptions saveOptions;
@@ -256,7 +256,7 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer (Texture Scan).txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.0.8 (Texture Scan) by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.0.9 (Texture Scan) by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -285,7 +285,10 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 		wxArrayString fileLog;
 		if (fileExt == "tga")
 		{
-			fileLog.Add("TGA texture files are not supported.");
+			if (!file.Lower().Contains("facegendata"))
+			{
+				fileLog.Add("TGA texture files are not supported.");
+			}
 		}
 		else
 		{
@@ -403,8 +406,15 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 
 	frame->EndProgress();
 
-	wxSingleChoiceDialog resultDialog(frame, "", "Texture Scan Result", logResult, nullptr, wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
-	resultDialog.ShowModal();
+	if (!logResult.IsEmpty())
+	{
+		wxSingleChoiceDialog resultDialog(frame, "", "Texture Scan Result", logResult, nullptr, wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
+		resultDialog.ShowModal();
+	}
+	else
+	{
+		wxMessageBox("No errors were detected in the texture scan.", "Texture Scan");
+	}
 }
 
 
