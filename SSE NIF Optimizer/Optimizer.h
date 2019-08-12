@@ -109,7 +109,7 @@ public:
 	wxButton* btOptimize = nullptr;
 	wxButton* btScanTextures = nullptr;
 
-	Optimizer(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = "SSE NIF Optimizer v3.0.9", const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(475, 340), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
+	Optimizer(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = "SSE NIF Optimizer v3.0.10", const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(475, 340), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~Optimizer();
 
 	void StartProgress(const wxString& msg = "");
