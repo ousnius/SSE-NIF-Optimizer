@@ -183,6 +183,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 
 			if (options.cleanSkinning)
 			{
+				AnimSkeleton::getInstance().DisableCustomTransforms();
+
 				AnimInfo anim;
 				anim.LoadFromNif(&nif);
 

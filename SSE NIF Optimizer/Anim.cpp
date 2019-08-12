@@ -27,8 +27,11 @@ bool AnimInfo::RemoveShapeBone(const std::string& shape, const std::string& bone
 	shapeSkinning[shape].RemoveBone(boneName);
 
 	AnimSkeleton::getInstance().ReleaseBone(boneName);
-	if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0)
-		refNif->DeleteNode(boneName);
+	if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0) {
+		auto nodeParent = refNif->GetParentNode(refNif->FindBlockByName<NiNode>(boneName));
+		if (nodeParent == refNif->GetRootNode())
+			refNif->DeleteNode(boneName);
+	}
 
 	return true;
 }
@@ -38,8 +41,11 @@ void AnimInfo::Clear() {
 		for (auto &shapeBoneList : shapeBones) {
 			for (auto &boneName : shapeBoneList.second) {
 				AnimSkeleton::getInstance().ReleaseBone(boneName);
-				if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0)
-					refNif->DeleteNode(boneName);
+				if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0) {
+					auto nodeParent = refNif->GetParentNode(refNif->FindBlockByName<NiNode>(boneName));
+					if (nodeParent == refNif->GetRootNode())
+						refNif->DeleteNode(boneName);
+				}
 			}
 		}
 
@@ -57,8 +63,11 @@ void AnimInfo::ClearShape(const std::string& shape) {
 
 	for (auto &boneName : shapeBones[shape]) {
 		AnimSkeleton::getInstance().ReleaseBone(boneName);
-		if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0)
-			refNif->DeleteNode(boneName);
+		if (AnimSkeleton::getInstance().GetBoneRefCount(boneName) <= 0) {
+			auto nodeParent = refNif->GetParentNode(refNif->FindBlockByName<NiNode>(boneName));
+			if (nodeParent == refNif->GetRootNode())
+				refNif->DeleteNode(boneName);
+		}
 	}
 
 	shapeBones.erase(shape);
@@ -180,6 +189,14 @@ std::unordered_map<ushort, float>* AnimInfo::GetWeightsPtr(const std::string& sh
 	return &shapeSkinning[shape].boneWeights[b].weights;
 }
 
+bool AnimInfo::HasWeights(const std::string& shape, const std::string& boneName) {
+	auto weights = GetWeightsPtr(shape, boneName);
+	if (weights && weights->size() > 0)
+		return true;
+	
+	return false;
+}
+
 void AnimInfo::GetWeights(const std::string& shape, const std::string& boneName, std::unordered_map<ushort, float>& outVertWeights) {
 	auto weights = GetWeightsPtr(shape, boneName);
 	if (weights)
@@ -276,8 +293,11 @@ void AnimInfo::WriteToNif(NifFile* nif, const std::string& shapeException) {
 				continue;
 
 			if (bones.first == shapeException) {
-				if (boneRef.refCount <= 1)
-					nif->DeleteNode(bone);
+				if (boneRef.refCount <= 1) {
+					auto nodeParent = nif->GetParentNode(nif->FindBlockByName<NiNode>(bone));
+					if (nodeParent == nif->GetRootNode())
+						nif->DeleteNode(bone);
+				}
 				continue;
 			}
 
@@ -446,13 +466,11 @@ int AnimSkeleton::LoadFromNif(const std::string& fileName) {
 AnimBone& AnimSkeleton::AddBone(const std::string& boneName, bool bCustom) {
 	if (!bCustom)
 		return allBones[boneName];
-	else if (allowCustom) {
+	else {
 		AnimBone* cb = &customBones[boneName];
 		cb->boneName = boneName;
 		return *cb;
 	}
-	else
-		return invBone;
 }
 
 std::string AnimSkeleton::GenerateBoneName() {
@@ -466,7 +484,7 @@ bool AnimSkeleton::RefBone(const std::string& boneName) {
 		allBones[boneName].refCount++;
 		return true;
 	}
-	if (allowCustom && customBones.find(boneName) != customBones.end()) {
+	if (customBones.find(boneName) != customBones.end()) {
 		customBones[boneName].refCount++;
 		return true;
 	}
@@ -478,7 +496,7 @@ bool AnimSkeleton::ReleaseBone(const std::string& boneName) {
 		allBones[boneName].refCount--;
 		return true;
 	}
-	if (allowCustom && customBones.find(boneName) != customBones.end()) {
+	if (customBones.find(boneName) != customBones.end()) {
 		customBones[boneName].refCount--;
 		return true;
 	}
@@ -489,13 +507,13 @@ int AnimSkeleton::GetBoneRefCount(const std::string& boneName) {
 	if (allBones.find(boneName) != allBones.end())
 		return allBones[boneName].refCount;
 
-	if (allowCustom && customBones.find(boneName) != customBones.end())
+	if (customBones.find(boneName) != customBones.end())
 		return customBones[boneName].refCount;
 
 	return 0;
 }
 
-AnimBone* AnimSkeleton::GetBonePtr(const std::string& boneName) {
+AnimBone* AnimSkeleton::GetBonePtr(const std::string& boneName, const bool allowCustom) {
 	if (allBones.find(boneName) != allBones.end())
 		return &allBones[boneName];
 
@@ -514,7 +532,7 @@ bool AnimSkeleton::GetBone(const std::string& boneName, AnimBone& outBone) {
 		outBone = allBones[boneName];
 		return true;
 	}
-	if (allowCustom && customBones.find(boneName) != customBones.end()) {
+	if (customBones.find(boneName) != customBones.end()) {
 		outBone = customBones[boneName];
 		return true;
 	}
@@ -522,7 +540,7 @@ bool AnimSkeleton::GetBone(const std::string& boneName, AnimBone& outBone) {
 }
 
 bool AnimSkeleton::GetBoneTransform(const std::string &boneName, MatTransform& xform) {
-	auto bone = GetBonePtr(boneName);
+	auto bone = GetBonePtr(boneName, allowCustomTransforms);
 	if (!bone)
 		return false;
 
@@ -538,7 +556,7 @@ bool AnimSkeleton::GetBoneTransform(const std::string &boneName, MatTransform& x
 }
 
 bool AnimSkeleton::GetSkinTransform(const std::string &boneName, const MatTransform& skinning, MatTransform& xform) {
-	auto bone = GetBonePtr(boneName);
+	auto bone = GetBonePtr(boneName, allowCustomTransforms);
 	if (!bone)
 		return false;
 
@@ -560,13 +578,15 @@ int AnimSkeleton::GetActiveBoneNames(std::vector<std::string>& outBoneNames) {
 		}
 	}
 
-	if (allowCustom) {
-		for (auto &cb : customBones) {
-			if (cb.second.refCount > 0) {
-				outBoneNames.push_back(cb.first);
-				c++;
-			}
+	for (auto &cb : customBones) {
+		if (cb.second.refCount > 0) {
+			outBoneNames.push_back(cb.first);
+			c++;
 		}
 	}
 	return c;
+}
+
+void AnimSkeleton::DisableCustomTransforms() {
+	allowCustomTransforms = false;
 }
