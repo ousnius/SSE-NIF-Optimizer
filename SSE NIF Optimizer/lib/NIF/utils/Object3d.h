@@ -7,6 +7,8 @@ See the included LICENSE file
 
 #include <vector>
 #include <algorithm>
+#include <cmath>
+#include <cstring>
 
 #pragma warning (disable : 4018 4244 4267 4389)
 
@@ -167,6 +169,28 @@ struct Vector3 {
 		tmp += other;
 		return tmp;
 	}
+	Vector3& operator *= (const Vector3& other) {
+		x *= other.x;
+		y *= other.y;
+		z *= other.z;
+		return (*this);
+	}
+	Vector3 operator * (const Vector3& other) const {
+		Vector3 tmp = (*this);
+		tmp *= other;
+		return tmp;
+	}
+	Vector3& operator /= (const Vector3& other) {
+		x /= other.x;
+		y /= other.y;
+		z /= other.z;
+		return (*this);
+	}
+	Vector3 operator / (const Vector3& other) const {
+		Vector3 tmp = (*this);
+		tmp /= other;
+		return tmp;
+	}
 	Vector3& operator *= (float val) {
 		x *= val;
 		y *= val;
@@ -230,7 +254,7 @@ struct Vector3 {
 		else if (dot == 0.0f)
 			return PI / 2.0f;
 
-		return acosf(dot);
+		return acos(dot);
 	}
 
 	void clampEpsilon() {
@@ -473,12 +497,12 @@ public:
 
 	// Set rotation matrix from yaw, pitch and roll
 	static Matrix3 MakeRotation(const float yaw, const float pitch, const float roll) {
-		float ch = std::cosf(yaw);
-		float sh = std::sinf(yaw);
-		float cp = std::cosf(pitch);
-		float sp = std::sinf(pitch);
-		float cb = std::cosf(roll);
-		float sb = std::sinf(roll);
+		float ch = std::cos(yaw);
+		float sh = std::sin(yaw);
+		float cp = std::cos(pitch);
+		float sp = std::sin(pitch);
+		float cb = std::cos(roll);
+		float sb = std::sin(roll);
 
 		Matrix3 rot;
 		rot[0].x = ch * cb + sh * sp * sb;
@@ -729,8 +753,8 @@ public:
 	}
 
 	Matrix4& Rotate(float radAngle, float x, float y, float z) {
-		float c = std::cosf(radAngle);
-		float s = std::sinf(radAngle);
+		float c = std::cos(radAngle);
+		float s = std::sin(radAngle);
 
 		float xx = x*x;
 		float xy = x*y;
@@ -1131,19 +1155,13 @@ struct Edge {
 };
 
 namespace std {
-	template<> struct std::hash < Edge > {
+	template<> struct hash < Edge > {
 		std::size_t operator() (const Edge& t) const {
 			return ((t.p2 << 16) | (t.p1 & 0xFFFF));
 		}
 	};
 
-	template <> struct std::equal_to < Edge > {
-		bool operator() (const Edge& t1, const Edge& t2) const {
-			return ((t1.p1 == t2.p1) && (t1.p2 == t2.p2));
-		}
-	};
-
-	template <> struct std::hash < Triangle > {
+	template <> struct hash < Triangle > {
 		std::size_t operator() (const Triangle& t) const {
 			char* d = (char*)&t;
 			std::size_t len = sizeof(Triangle);
@@ -1159,12 +1177,14 @@ namespace std {
 			return hash;
 		}
 	};
+}
 
-	template <> struct std::equal_to < Triangle > {
-		bool operator() (const Triangle& t1, const Triangle& t2) const {
-			return ((t1.p1 == t2.p1) && (t1.p2 == t2.p2) && (t1.p3 == t2.p3));
-		}
-	};
+inline bool operator== (const Edge& t1, const Edge& t2) {
+	return ((t1.p1 == t2.p1) && (t1.p2 == t2.p2));
+}
+
+inline bool operator== (const Triangle& t1, const Triangle& t2) {
+	return ((t1.p1 == t2.p1) && (t1.p2 == t2.p2) && (t1.p3 == t2.p3));
 }
 
 struct Face {
@@ -1189,5 +1209,156 @@ struct Face {
 			p4 = points[3];
 			uv4 = tc[3];
 		}
+	}
+};
+
+struct Rect {
+	float x1 = 0.0f;
+	float y1 = 0.0f;
+	float x2 = 0.0f;
+	float y2 = 0.0f;
+
+	Rect() {}
+
+	Rect(float X1, float Y1, float X2, float Y2) {
+		x1 = X1;
+		y1 = Y1;
+		x2 = X2;
+		y2 = Y2;
+	}
+
+	float GetLeft() {
+		return x1;
+	}
+	float GetTop() {
+		return y1;
+	}
+	float GetRight() {
+		return x2;
+	}
+	float GetBottom() {
+		return y2;
+	}
+
+	Vector2 GetTopLeft() {
+		return Vector2(x1, y1);
+	}
+	Vector2 GetBottomRight() {
+		return Vector2(x2, y2);
+	}
+	Vector2 GetTopRight() {
+		return Vector2(x2, y1);
+	}
+	Vector2 GetBottomLeft() {
+		return Vector2(x1, y2);
+	}
+
+	Vector2 GetCenter() {
+		return Vector2((x1 + x2) / 2, (y1 + y2) / 2);
+	}
+
+	float GetWidth() {
+		return  x2 - x1 + 1;
+	}
+	float GetHeight() {
+		return  y2 - y1 + 1;
+	}
+	Vector2 GetSize() {
+		return Vector2(GetWidth(), GetHeight());
+	}
+
+	void SetLeft(float pos) {
+		x1 = pos;
+	}
+	void SetTop(float pos) {
+		y1 = pos;
+	}
+	void SetRight(float pos) {
+		x2 = pos;
+	}
+	void SetBottom(float pos) {
+		y2 = pos;
+	}
+
+	void SetTopLeft(const Vector2 &p) {
+		x1 = p.u;
+		y1 = p.v;
+	}
+	void SetBottomRight(const Vector2 &p) {
+		x2 = p.u;
+		y2 = p.v;
+	}
+	void SetTopRight(const Vector2 &p) {
+		x2 = p.u;
+		y1 = p.v;
+	}
+	void SetBottomLeft(const Vector2 &p) {
+		x1 = p.u;
+		y2 = p.v;
+	}
+
+	void SetWidth(float w) {
+		x2 = x1 + w - 1.0f;
+	}
+	void SetHeight(float h) {
+		y2 = y1 + h - 1.0f;
+	}
+
+	Rect Normalized() {
+		Rect r;
+
+		if (x2 < x1) {
+			r.x1 = x2;
+			r.x2 = x1;
+		}
+		else {
+			r.x1 = x1;
+			r.x2 = x2;
+		}
+
+		if (y2 < y1) {
+			r.y1 = y2;
+			r.y2 = y1;
+		}
+		else {
+			r.y1 = y1;
+			r.y2 = y2;
+		}
+
+		return r;
+	}
+
+	bool Contains(const Vector2& p) {
+		float l = 0.0f;
+		float r = 0.0f;
+
+		if (x2 < x1 - 1.0f) {
+			l = x2;
+			r = x1;
+		}
+		else {
+			l = x1;
+			r = x2;
+		}
+
+		if (p.u < l || p.u > r)
+			return false;
+
+		float t = 0.0f;
+		float b = 0.0f;
+
+		if (y2 < y1 - 1.0f) {
+			t = y2;
+			b = y1;
+		}
+		else {
+			t = y1;
+			b = y2;
+		}
+
+		if (p.v < t || p.v > b)
+			return false;
+
+		return true;
 	}
 };

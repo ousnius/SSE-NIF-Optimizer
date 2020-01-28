@@ -69,6 +69,7 @@ public:
 
 	NifFile& operator=(const NifFile& other) {
 		CopyFrom(other);
+		return *this;
 	}
 
 	NiHeader& GetHeader() { return hdr; }
@@ -98,6 +99,7 @@ public:
 
 	int AddNode(const std::string& nodeName, const MatTransform& xform);
 	void DeleteNode(const std::string& nodeName);
+	bool CanDeleteNode(const std::string& nodeName);
 	std::string GetNodeName(const int blockID);
 	void SetNodeName(const int blockID, const std::string& newName);
 
@@ -205,7 +207,6 @@ public:
 	int CalcUVDiff(NiShape* shape, const std::vector<Vector2>* targetData, std::unordered_map<ushort, Vector3>& outDiffData, float scale = 1.0f);
 
 	void CreateSkinning(NiShape* shape);
-	void UpdateBoundingSphere(const std::string& shapeName);
 	void SetShapeDynamic(const std::string& shapeName);
 
 	// Maintains the number of and makeup of skin partitions, but updates the weighting values

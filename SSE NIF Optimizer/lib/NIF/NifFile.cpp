@@ -455,6 +455,23 @@ void NifFile::DeleteNode(const std::string& nodeName) {
 	hdr.DeleteBlock(GetBlockID(FindBlockByName<NiNode>(nodeName)));
 }
 
+bool NifFile::CanDeleteNode(const std::string& nodeName) {
+	auto node = FindBlockByName<NiNode>(nodeName);
+	if (!node)
+		return false;
+
+	// Only delete if the node has no children
+	if (node->GetChildren().GetSize() > 0)
+		return false;
+
+	// Only delete if the node's parent is the root node
+	auto nodeParent = GetParentNode(node);
+	if (nodeParent != GetRootNode())
+		return false;
+
+	return true;
+}
+
 std::string NifFile::GetNodeName(const int blockID) {
 	std::string name;
 
@@ -867,8 +884,8 @@ int NifFile::Save(std::fstream& file, const NifSaveOptions& options) {
 }
 
 void NifFile::Optimize() {
-	for (auto &s : GetShapeNames())
-		UpdateBoundingSphere(s);
+	for (auto &s : GetShapes())
+		s->UpdateBounds();
 
 	DeleteUnreferencedBlocks();
 }
@@ -1404,6 +1421,7 @@ void NifFile::PrepareData() {
 					dynamicShape->vertData[i].vert.x = dynamicShape->dynamicData[i].x;
 					dynamicShape->vertData[i].vert.y = dynamicShape->dynamicData[i].y;
 					dynamicShape->vertData[i].vert.z = dynamicShape->dynamicData[i].z;
+					dynamicShape->vertData[i].bitangentX = dynamicShape->dynamicData[i].w;
 				}
 			}
 		}
@@ -2454,13 +2472,33 @@ void NifFile::MirrorShape(NiShape* shape, bool mirrorX, bool mirrorY, bool mirro
 		if (geomData && !geomData->vertices.empty()) {
 				for (int i = 0; i < geomData->vertices.size(); ++i)
 					geomData->vertices[i] = mirrorMat * geomData->vertices[i];
+
+				for (int i = 0; i < geomData->normals.size(); ++i)
+					geomData->normals[i] = mirrorMat * geomData->normals[i];
+
+				for (int i = 0; i < geomData->tangents.size(); ++i)
+					geomData->tangents[i] = mirrorMat * geomData->tangents[i];
+
+				for (int i = 0; i < geomData->bitangents.size(); ++i)
+					geomData->bitangents[i] = mirrorMat * geomData->bitangents[i];
 		}
 	}
 	else if (shape->HasType<BSTriShape>()) {
 		auto bsTriShape = dynamic_cast<BSTriShape*>(shape);
 		if (bsTriShape) {
-				for (int i = 0; i < bsTriShape->vertData.size(); ++i)
-					bsTriShape->vertData[i].vert = mirrorMat * bsTriShape->vertData[i].vert;
+			for (int i = 0; i < bsTriShape->vertData.size(); ++i) 
+				bsTriShape->vertData[i].vert = mirrorMat * bsTriShape->vertData[i].vert;
+
+			auto normals = bsTriShape->GetNormalData(false);
+			if (normals) {
+				for (int i = 0; i < normals->size(); ++i)
+					(*normals)[i] = mirrorMat * (*normals)[i];
+
+				bsTriShape->SetNormals((*normals));
+
+				if (bsTriShape->HasTangents())
+					bsTriShape->CalcTangentSpace();
+			}
 		}
 	}
 
@@ -3464,14 +3502,6 @@ void NifFile::CreateSkinning(NiShape* shape) {
 	NiShader* shader = GetShader(shape);
 	if (shader)
 		shader->SetSkinned(true);
-}
-
-void NifFile::UpdateBoundingSphere(const std::string& shapeName) {
-	auto shape = FindBlockByName<NiShape>(shapeName);
-	if (!shape)
-		return;
-
-	shape->UpdateBounds();
 }
 
 void NifFile::SetShapeDynamic(const std::string& shapeName) {
