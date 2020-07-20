@@ -69,6 +69,9 @@ private:
 	uint nds = 0;
 
 public:
+	NiVersion() = default;
+	NiVersion(NiFileVersion _file, uint _user, uint _stream);
+
 	// Construct a file version enumeration from individual values
 	static NiFileVersion ToFile(byte major, byte minor, byte patch, byte internal) {
 		return NiFileVersion((major << 24) | (minor << 16) | (patch << 8) | internal);
@@ -106,6 +109,12 @@ public:
 	bool IsSK() { return file == V20_2_0_7 && stream == 83; }
 	bool IsSSE() { return file == V20_2_0_7 && stream == 100; }
 	bool IsFO4() { return file == V20_2_0_7 && stream == 130; }
+
+	static NiVersion getOB() { return NiVersion(NiFileVersion::V20_0_0_5, 11, 0); }
+	static NiVersion getFO3() { return NiVersion(NiFileVersion::V20_2_0_7, 0, 82); }
+	static NiVersion getSK() { return NiVersion(NiFileVersion::V20_2_0_7, 0, 83); }
+	static NiVersion getSSE() { return NiVersion(NiFileVersion::V20_2_0_7, 0, 100); }
+	static NiVersion getFO4() { return NiVersion(NiFileVersion::V20_2_0_7, 0, 130); }
 };
 
 enum NiEndian : byte {
@@ -250,7 +259,7 @@ protected:
 	int index = 0xFFFFFFFF;
 
 public:
-	int GetIndex() {
+    int GetIndex() const {
 		return index;
 	}
 
@@ -474,8 +483,8 @@ public:
 	virtual NiObject* Clone() { return new NiObject(*this); }
 
 	template <typename T>
-	bool HasType() {
-		return dynamic_cast<T*>(this) != nullptr;
+    bool HasType() const {
+        return dynamic_cast<const T*>(this) != nullptr;
 	}
 };
 
@@ -561,12 +570,17 @@ public:
 	}
 
 	template <class T>
-	T* GetBlock(const int blockId) {
+    const T* GetBlock(const int blockId) const {
 		if (blockId >= 0 && blockId < numBlocks)
 			return dynamic_cast<T*>((*blocks)[blockId].get());
 
 		return nullptr;
 	}
+
+    template <class T>
+    T* GetBlock(const int blockId) {
+        return const_cast<T*>(const_cast<const NiHeader*>(this)->GetBlock<T>(blockId));
+    }
 
 	void DeleteBlock(int blockId);
 	void DeleteBlockByType(const std::string& blockTypeStr, const bool orphanedOnly = false);
@@ -577,7 +591,31 @@ public:
 	// Swaps two blocks, updating references in other blocks that may refer to their old indices
 	void SwapBlocks(const int blockIndexLo, const int blockIndexHi);
 	bool IsBlockReferenced(const int blockId);
-	void DeleteUnreferencedBlocks(const int rootId, bool* hadDeletions = nullptr);
+	int GetBlockRefCount(const int blockId);
+
+	template <class T>
+	bool DeleteUnreferencedBlocks(const int rootId, int* deletionCount = nullptr) {
+		if (rootId == 0xFFFFFFFF)
+			return false;
+
+		for (int i = 0; i < numBlocks; i++) {
+			if (i != rootId) {
+				// Only check blocks of provided template type
+				auto block = GetBlock<T>(i);
+				if (block && !IsBlockReferenced(i)) {
+					DeleteBlock(i);
+
+					if (deletionCount)
+						(*deletionCount)++;
+
+					// Deleting a block can cause others to become unreferenced
+					return DeleteUnreferencedBlocks<T>(rootId > i ? rootId - 1 : rootId, deletionCount);
+				}
+			}
+		}
+
+		return true;
+	}
 
 	ushort AddOrFindBlockTypeId(const std::string& blockTypeName);
 	std::string GetBlockTypeStringById(const int blockId);

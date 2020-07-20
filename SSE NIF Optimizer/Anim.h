@@ -13,8 +13,6 @@ struct VertexBoneWeights {
 	std::vector<byte> boneIds;
 	std::vector<float> weights;
 
-	VertexBoneWeights() { }
-
 	void Add(const byte inBoneId, const float inWeight) {
 		if (inWeight == 0.0f)
 			return;
@@ -36,37 +34,48 @@ struct VertexBoneWeights {
 class AnimBone {
 public:
 	std::string boneName = "bogus";		// bone names are node names in the nif file
-	int boneID = -1;					// block id from the original nif file
-	Matrix4 rot;						// original node rotation value (total rotation, including parents)
-	Vector3 trans;						// original node translation value (total translation, including parents)
-	float scale = 1.0f;					// original node scale value
-
-	bool isValidBone = false;
+	bool isStandardBone = false;
 	AnimBone* parent = nullptr;
 	std::vector<AnimBone*> children;
-	Matrix4 localRot;					// rotation offset from parent bone.
-	Vector3 localTrans;					// offset from parent bone
+	// xformToGlobal: transforms from this bone's CS to the global CS.
+	MatTransform xformToGlobal;
+	// xformToParent: transforms from this bone's CS to its parent's CS.
+	MatTransform xformToParent;
+	// pose rotation and translation vectors
+	Vector3 poseRotVec, poseTranVec;
+	MatTransform xformPoseToGlobal;
 
 	int refCount = 0;					// reference count of this bone
 
-	AnimBone() {}
-
 	AnimBone& LoadFromNif(NifFile* skeletonNif, int srcBlock, AnimBone* parent = nullptr);
+	// AddToNif adds this bone to the given nif, as well as its parent
+	// if missing, recursively.  The new bone's NiNode is returned.
+	NiNode* AddToNif(NifFile *nif) const;
+	// SetTransformBoneToParent sets xformToParent and updates xformToGlobal
+	// and xformPoseToGlobal, for this and for descendants.
+	void SetTransformBoneToParent(const MatTransform &ttp);
+	// UpdateTransformToGlobal updates xformToGlobal for this and for
+	// descendants.  This should only be called from itself,
+	// SetTransformBoneToParent, and SetParentBone.
+	void UpdateTransformToGlobal();
+	// UpdatePoseTransform updates xformPoseToGlobal for this and all
+	// descendants.  Call it after poseRotVec, poseTranVec, or
+	// xformToGlobal is changed.
+	void UpdatePoseTransform();
+	// SetParentBone updates "parent" of this and "children" of the old
+	// and new parents.  It also calls UpdateTransformToGlobal and
+	// UpdatePoseTranform.
+	void SetParentBone(AnimBone* newParent);
 };
 
-// Vertex to weight value association. Also keeps track of skin transform and bounding sphere.
+// Vertex to weight value association. Also keeps track of skin-to-bone transform and bounding sphere.
 class AnimWeight {
 public:
 	std::unordered_map<ushort, float> weights;
-	MatTransform xform;
+	MatTransform xformSkinToBone;
 	BoundingSphere bounds;
 
-	AnimWeight() {}
-	AnimWeight(NifFile* loadFromFile, NiShape* shape, const int& index) {
-		loadFromFile->GetShapeBoneWeights(shape, index, weights);
-		loadFromFile->GetShapeBoneTransform(shape, index, xform);
-		loadFromFile->GetShapeBoneBounds(shape, index, bounds);
-	}
+	void LoadFromNif(NifFile* loadFromFile, NiShape* shape, const int& index);
 };
 
 // Bone to weight list association.
@@ -74,22 +83,9 @@ class AnimSkin {
 public:
 	std::unordered_map<int, AnimWeight> boneWeights;
 	std::unordered_map<std::string, int> boneNames;
+	MatTransform xformGlobalToSkin;
 
-	AnimSkin() { }
-	AnimSkin(NifFile* loadFromFile, NiShape* shape) {
-		std::vector<int> idList;
-		loadFromFile->GetShapeBoneIDList(shape, idList);
-
-		int newID = 0;
-		for (auto &id : idList) {
-			auto node = loadFromFile->GetHeader().GetBlock<NiNode>(id);
-			if (node) {
-				boneWeights[newID] = AnimWeight(loadFromFile, shape, newID);
-				boneNames[node->GetName()] = newID;
-				newID++;
-			}
-		}
-	}
+	void LoadFromNif(NifFile* loadFromFile, NiShape* shape);
 
 	void RemoveBone(const std::string& boneName) {
 		auto bone = boneNames.find(boneName);
@@ -115,6 +111,8 @@ public:
 			if (bn.second > boneID)
 				bn.second--;
 	}
+
+	void InsertVertexIndices(const std::vector<ushort>& indices);
 };
 
 class AnimPartition {
@@ -129,12 +127,15 @@ public:
 
 /* Represents animation weighting to a common skeleton across multiple shapes, sourced from nif files*/
 class AnimInfo {
+private:
+	NifFile* refNif = nullptr;
+
 public:
 	std::map<std::string, std::vector<std::string>> shapeBones;
 	std::unordered_map<std::string, AnimSkin> shapeSkinning;		// Shape to skin association.
-	NifFile* refNif = nullptr;
 
-	AnimInfo() {}
+	NifFile* GetRefNif() { return refNif; };
+	void SetRefNif(NifFile* nif) { refNif = nif; };
 
 	// Returns true if a new bone is added, false if the bone already exists.
 	bool AddShapeBone(const std::string& shape, const std::string& boneName);
@@ -142,6 +143,7 @@ public:
 
 	void Clear();
 	void ClearShape(const std::string& shape);
+	bool HasSkinnedShape(NiShape* shape);
 	void DeleteVertsForShape(const std::string& shape, const std::vector<ushort>& indices);
 
 	// Loads the skinning information contained in the nif for all shapes.
@@ -152,10 +154,18 @@ public:
 	std::unordered_map<ushort, float>* GetWeightsPtr(const std::string& shape, const std::string& boneName);
 	bool HasWeights(const std::string& shape, const std::string& boneName);
 	void GetWeights(const std::string& shape, const std::string& boneName, std::unordered_map<ushort, float>& outVertWeights);
-	void GetBoneXForm(const std::string& boneName, MatTransform& stransform);
 	void SetWeights(const std::string& shape, const std::string& boneName, std::unordered_map<ushort, float>& inVertWeights);
-	bool GetShapeBoneXForm(const std::string& shape, const std::string& boneName, MatTransform& stransform);
-	void SetShapeBoneXForm(const std::string& shape, const std::string& boneName, MatTransform& stransform);
+	bool GetXFormSkinToBone(const std::string& shape, const std::string& boneName, MatTransform& stransform);
+	void SetXFormSkinToBone(const std::string& shape, const std::string& boneName, const MatTransform& stransform);
+	// RecalcXFormSkinToBone recalculates a shape bone's xformSkinToBone
+	// from other transforms.
+	void RecalcXFormSkinToBone(const std::string& shape, const std::string& boneName);
+	// RecursiveRecalcXFormSkinToBone calls RecalcXFormSkinToBone for the
+	// given bone and all its descendants.
+	void RecursiveRecalcXFormSkinToBone(const std::string& shape, AnimBone *bPtr);
+	// ChangeGlobalToSkinTransform sets the global-to-skin transform for a
+	// shape and updates all skin-to-bone transforms.
+	void ChangeGlobalToSkinTransform(const std::string& shape, const MatTransform &newTrans);
 	bool CalcShapeSkinBounds(const std::string& shapeName, const int& boneIndex);
 	void CleanupBones();
 	void WriteToNif(NifFile* nif, const std::string& shapeException = "");
@@ -179,11 +189,12 @@ public:
 	}
 
 	NifFile refSkeletonNif;
-	bool isValid = false;
 
 	int LoadFromNif(const std::string& fileName);
-	AnimBone& AddBone(const std::string& boneName, bool bCustom = false);
+	AnimBone& AddStandardBone(const std::string& boneName);
+	AnimBone& AddCustomBone(const std::string& boneName);
 	std::string GenerateBoneName();
+	AnimBone *LoadCustomBoneFromNif(NifFile *nif, const std::string &boneName);
 
 	bool RefBone(const std::string& boneName);
 	bool ReleaseBone(const std::string& boneName);
@@ -191,9 +202,7 @@ public:
 
 	AnimBone* GetBonePtr(const std::string& boneName, const bool allowCustom = true);
 	AnimBone* GetRootBonePtr();
-	bool GetBone(const std::string& boneName, AnimBone& outBone);
-	bool GetBoneTransform(const std::string& boneName, MatTransform& xform);
-	bool GetSkinTransform(const std::string& boneName, const MatTransform& skinning, MatTransform& xform);
+	bool GetBoneTransformToGlobal(const std::string& boneName, MatTransform& xform);
 
 	int GetActiveBoneNames(std::vector<std::string>& outBoneNames);
 	void DisableCustomTransforms();
