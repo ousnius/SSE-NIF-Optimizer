@@ -60,7 +60,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer.txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.0.11 by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.0.12 by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -205,7 +205,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 				}
 			}
 
-			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.0.11.");
+			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.0.12.");
 			nif.FinalizeData();
 
 			NifSaveOptions saveOptions;
@@ -258,7 +258,7 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer (Texture Scan).txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.0.11 (Texture Scan) by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.0.12 (Texture Scan) by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -322,7 +322,12 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 
 						if (std::memcmp(&dds.ddspf, &DDSPF_L8, sizeof(DDS_PIXELFORMAT)) == 0)
 						{
-							fileLog.Add("Unsupported L8 format (one channel with luminance flag). Use R8 or a compressed format instead.");
+							fileLog.Add("Unsupported L8 format (one channel with luminance flag). Use R8 or BC4 instead.");
+						}
+
+						if (std::memcmp(&dds.ddspf, &DDSPF_L16, sizeof(DDS_PIXELFORMAT)) == 0)
+						{
+							fileLog.Add("Unsupported L16 format (two channels with luminance flag). Use BC7 instead.");
 						}
 
 						if (std::memcmp(&dds.ddspf, &DDSPF_DX10, sizeof(DDS_PIXELFORMAT)) == 0)
