@@ -327,7 +327,12 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 
 						if (std::memcmp(&dds.ddspf, &DDSPF_L16, sizeof(DDS_PIXELFORMAT)) == 0)
 						{
-							fileLog.Add("Unsupported L16 format (two channels with luminance flag). Use BC7 instead.");
+							fileLog.Add("Unsupported L16 format (one channel with luminance flag). Use R8 or BC4 instead.");
+						}
+
+						if (std::memcmp(&dds.ddspf, &DDSPF_A8L8, sizeof(DDS_PIXELFORMAT)) == 0)
+						{
+							fileLog.Add("Unsupported A8L8 format (two channels with luminance flag). Use BC7 instead.");
 						}
 
 						if (std::memcmp(&dds.ddspf, &DDSPF_DX10, sizeof(DDS_PIXELFORMAT)) == 0)
