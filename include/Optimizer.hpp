@@ -11,8 +11,8 @@ See the included LICENSE file
 #include <wx/spinctrl.h>
 #include <wx/dir.h>
 
-#include "lib/NIF/NifFile.h"
-#include "Anim.h"
+#include "NifFile.hpp"
+#include "Anim.hpp"
 
 enum TargetGame {
 	SSE,

@@ -1,0 +1,89 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClInclude Include="resource.h" />
+    <ClInclude Include="include\Optimizer.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PlatformUtil.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Anim.hpp">
+      <Filter>include</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="SSE NIF Optimizer.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="include">
+      <UniqueIdentifier>{59dce6bd-b397-4afa-ad09-ca7c9aa0f0ce}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="src">
+      <UniqueIdentifier>{88e10321-9f2f-48f5-8fee-94f0dba92593}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external">
+      <UniqueIdentifier>{9b8ba88e-106d-4fb2-bb86-8de5db69365c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\nifly">
+      <UniqueIdentifier>{3b62426a-99de-45d3-9c18-67764fa72d06}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="external\nifly\src">
+      <UniqueIdentifier>{83fea377-084c-48ef-abfb-7ec18f160d1f}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Optimizer.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\PlatformUtil.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Anim.cpp">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\NifFile.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Nodes.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Object3d.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Objects.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Particles.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Shaders.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Skin.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Animation.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\BasicTypes.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\bhk.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\ExtraData.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Factory.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+    <ClCompile Include="external\nifly\src\Geometry.cpp">
+      <Filter>external\nifly\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="LICENSE" />
+  </ItemGroup>
+</Project>

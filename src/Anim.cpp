@@ -3,8 +3,8 @@ SSE NIF Optimizer
 See the included LICENSE file
 */
 
-#include "Anim.h"
-#include "lib/NIF/NifUtil.h"
+#include "Anim.hpp"
+#include "NifUtil.hpp"
 
 #include <sstream>
 #include <unordered_set>

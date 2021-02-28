@@ -5,7 +5,7 @@ See the included LICENSE file
 
 #pragma once
 
-#include "lib/NIF/NifFile.h"
+#include "NifFile.hpp"
 
 #include <map>
 

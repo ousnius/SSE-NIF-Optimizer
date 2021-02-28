@@ -3,7 +3,7 @@ SSE NIF Optimizer
 See the included LICENSE file
 */
 
-#include "PlatformUtil.h"
+#include "PlatformUtil.hpp"
 
 namespace PlatformUtil {
 #ifdef _WINDOWS

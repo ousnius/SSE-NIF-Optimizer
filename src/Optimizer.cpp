@@ -3,9 +3,9 @@ SSE NIF Optimizer
 See the included LICENSE file
 */
 
-#include "Optimizer.h"
-#include "PlatformUtil.h"
-#include "lib/DDS.h"
+#include "Optimizer.hpp"
+#include "PlatformUtil.hpp"
+#include "DDS.h"
 
 
 IMPLEMENT_APP(OptimizerApp)
