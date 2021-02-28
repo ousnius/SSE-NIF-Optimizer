@@ -9,6 +9,8 @@ See the included LICENSE file
 
 #include <map>
 
+using namespace nifly;
+
 struct VertexBoneWeights {
 	std::vector<byte> boneIds;
 	std::vector<float> weights;

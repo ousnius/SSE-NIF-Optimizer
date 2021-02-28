@@ -14,6 +14,8 @@ See the included LICENSE file
 #include "Anim.hpp"
 #include "NifFile.hpp"
 
+using namespace nifly;
+
 enum TargetGame { SSE, LE };
 
 struct OptimizerOptions {
