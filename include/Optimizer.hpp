@@ -5,19 +5,16 @@ See the included LICENSE file
 
 #pragma once
 
-#include <wx/wx.h>
 #include <wx/cmdline.h>
+#include <wx/dir.h>
 #include <wx/filepicker.h>
 #include <wx/spinctrl.h>
-#include <wx/dir.h>
+#include <wx/wx.h>
 
-#include "NifFile.hpp"
 #include "Anim.hpp"
+#include "NifFile.hpp"
 
-enum TargetGame {
-	SSE,
-	LE
-};
+enum TargetGame { SSE, LE };
 
 struct OptimizerOptions {
 	wxString folder;
@@ -42,8 +39,7 @@ struct ScanOptions {
 
 class Optimizer;
 
-class OptimizerApp : public wxApp
-{
+class OptimizerApp : public wxApp {
 public:
 	virtual bool OnInit();
 	virtual int OnExit();
@@ -53,10 +49,8 @@ public:
 	void Optimize(const OptimizerOptions& options);
 	void ScanTextures(const ScanOptions& options);
 
-	void Log(wxFile& file, const wxString& msg = "")
-	{
-		if (file.IsOpened())
-		{
+	void Log(wxFile& file, const wxString& msg = "") {
+		if (file.IsOpened()) {
 			file.Write(msg);
 			file.Write("\r\n");
 			file.Flush();
@@ -68,15 +62,16 @@ private:
 	wxArrayString cmdFiles;
 };
 
-static const wxCmdLineEntryDesc cmdLineDesc[] =
-{
-	{ wxCMD_LINE_PARAM, "f", "files", "loads the files", wxCMD_LINE_VAL_STRING, wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE },
-	{ wxCMD_LINE_NONE }
-};
+static const wxCmdLineEntryDesc cmdLineDesc[] = {{wxCMD_LINE_PARAM,
+												  "f",
+												  "files",
+												  "loads the files",
+												  wxCMD_LINE_VAL_STRING,
+												  wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
+												 {wxCMD_LINE_NONE}};
 
 
-class Optimizer : public wxFrame
-{
+class Optimizer : public wxFrame {
 private:
 	std::vector<std::pair<int, int>> progressStack;
 	int progressVal = 0;
@@ -109,7 +104,12 @@ public:
 	wxButton* btOptimize = nullptr;
 	wxButton* btScanTextures = nullptr;
 
-	Optimizer(wxWindow* parent, wxWindowID id = wxID_ANY, const wxString& title = "SSE NIF Optimizer v3.0.14", const wxPoint& pos = wxDefaultPosition, const wxSize& size = wxSize(475, 340), long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
+	Optimizer(wxWindow* parent,
+			  wxWindowID id = wxID_ANY,
+			  const wxString& title = "SSE NIF Optimizer v3.0.14",
+			  const wxPoint& pos = wxDefaultPosition,
+			  const wxSize& size = wxSize(475, 340),
+			  long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~Optimizer();
 
 	void StartProgress(const wxString& msg = "");

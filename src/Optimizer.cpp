@@ -4,15 +4,14 @@ See the included LICENSE file
 */
 
 #include "Optimizer.hpp"
-#include "PlatformUtil.hpp"
 #include "DDS.h"
+#include "PlatformUtil.hpp"
 
 
 IMPLEMENT_APP(OptimizerApp)
 wxDECLARE_APP(OptimizerApp);
 
-bool OptimizerApp::OnInit()
-{
+bool OptimizerApp::OnInit() {
 	if (!wxApp::OnInit())
 		return false;
 
@@ -23,18 +22,15 @@ bool OptimizerApp::OnInit()
 	return true;
 }
 
-int OptimizerApp::OnExit()
-{
+int OptimizerApp::OnExit() {
 	return 0;
 }
 
-void OptimizerApp::OnInitCmdLine(wxCmdLineParser& parser)
-{
+void OptimizerApp::OnInitCmdLine(wxCmdLineParser& parser) {
 	parser.SetDesc(cmdLineDesc);
 }
 
-bool OptimizerApp::OnCmdLineParsed(wxCmdLineParser& parser)
-{
+bool OptimizerApp::OnCmdLineParsed(wxCmdLineParser& parser) {
 	cmdFiles.Clear();
 
 	for (size_t i = 0; i < parser.GetParamCount(); i++)
@@ -43,8 +39,7 @@ bool OptimizerApp::OnCmdLineParsed(wxCmdLineParser& parser)
 	return true;
 }
 
-void OptimizerApp::Optimize(const OptimizerOptions& options)
-{
+void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	frame->StartProgress();
 
 	int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
@@ -71,8 +66,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 	Log(logFile, wxString::Format("- Calculate Bounds: %s", options.calculateBounds ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Remove Parallax: %s", options.removeParallax ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Smooth Normals: %s", options.smoothNormals ? "Yes" : "No"));
-	if (options.smoothNormals)
-	{
+	if (options.smoothNormals) {
 		Log(logFile, wxString::Format("- Smooth Angle: %d", options.smoothAngle));
 		Log(logFile, wxString::Format("- Smooth Seam Normals: %s", options.smoothSeamNormals ? "Yes" : "No"));
 	}
@@ -88,8 +82,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 	if (fileCount > 0)
 		step /= fileCount;
 
-	for (auto &file : files)
-	{
+	for (auto& file : files) {
 		wxFileName fileName(file);
 		wxString fileExt = fileName.GetExt().MakeLower();
 		frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
@@ -103,22 +96,19 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 		loadOptions.isTerrain = (fileExt == "btr" || fileExt == "bto");
 
 		NifFile nif;
-		if (nif.Load(fsOpen, loadOptions) == 0)
-		{
+		if (nif.Load(fsOpen, loadOptions) == 0) {
 			OptOptions optOptions;
 			optOptions.headParts = options.headParts;
 			optOptions.calcBounds = options.calculateBounds;
 			optOptions.removeParallax = options.removeParallax;
 
 			NiVersion version;
-			if (options.targetGame == TargetGame::SSE)
-			{
+			if (options.targetGame == TargetGame::SSE) {
 				version.SetFile(NiFileVersion::V20_2_0_7);
 				version.SetUser(12);
 				version.SetStream(100);
 			}
-			else
-			{
+			else {
 				version.SetFile(NiFileVersion::V20_2_0_7);
 				version.SetUser(12);
 				version.SetStream(83);
@@ -126,81 +116,72 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 			optOptions.targetVersion = version;
 
 			OptResult result = nif.OptimizeFor(optOptions);
-			if (result.versionMismatch)
-			{
-				Log(logFile, "[INFO] NIF version can't be saved with the target version (or already was). Skipping conversion.");
+			if (result.versionMismatch) {
+				Log(logFile,
+					"[INFO] NIF version can't be saved with the target version (or already was). Skipping "
+					"conversion.");
 			}
 
-			if (result.dupesRenamed)
-			{
+			if (result.dupesRenamed) {
 				Log(logFile, "[INFO] Renamed at least one shape with duplicate names.\r\n");
 			}
 
-			if (!result.shapesVColorsRemoved.empty())
-			{
+			if (!result.shapesVColorsRemoved.empty()) {
 				wxString shapeList = "[INFO] Removed vertex colors from shapes:\r\n";
-				for (auto &s : result.shapesVColorsRemoved)
+				for (auto& s : result.shapesVColorsRemoved)
 					shapeList.Append(wxString::Format("- %s\r\n", s));
 
 				Log(logFile, shapeList);
 			}
 
-			if (!result.shapesNormalsRemoved.empty())
-			{
+			if (!result.shapesNormalsRemoved.empty()) {
 				wxString shapeList = "[INFO] Removed unnecessary normals and tangents from shapes:\r\n";
-				for (auto &s : result.shapesNormalsRemoved)
+				for (auto& s : result.shapesNormalsRemoved)
 					shapeList.Append(wxString::Format("- %s\r\n", s));
 
 				Log(logFile, shapeList);
 			}
 
-			if (!result.shapesPartTriangulated.empty())
-			{
+			if (!result.shapesPartTriangulated.empty()) {
 				wxString shapeList = "[INFO] Triangulated skin partitions of shapes:\r\n";
-				for (auto &s : result.shapesPartTriangulated)
+				for (auto& s : result.shapesPartTriangulated)
 					shapeList.Append(wxString::Format("- %s\r\n", s));
 
 				Log(logFile, shapeList);
 			}
 
-			if (!result.shapesTangentsAdded.empty())
-			{
+			if (!result.shapesTangentsAdded.empty()) {
 				wxString shapeList = "[INFO] Added tangents to shapes:\r\n";
-				for (auto &s : result.shapesTangentsAdded)
+				for (auto& s : result.shapesTangentsAdded)
 					shapeList.Append(wxString::Format("- %s\r\n", s));
 
 				Log(logFile, shapeList);
 			}
 
-			if (!result.shapesParallaxRemoved.empty())
-			{
+			if (!result.shapesParallaxRemoved.empty()) {
 				wxString shapeList = "[INFO] Removed parallax from shapes:\r\n";
-				for (auto &s : result.shapesParallaxRemoved)
+				for (auto& s : result.shapesParallaxRemoved)
 					shapeList.Append(wxString::Format("- %s\r\n", s));
 
 				Log(logFile, shapeList);
 			}
 
-			if (options.cleanSkinning)
-			{
+			if (options.cleanSkinning) {
 				AnimSkeleton::getInstance().Clear();
 				AnimSkeleton::getInstance().DisableCustomTransforms();
 
 				AnimInfo anim;
 				anim.LoadFromNif(&nif);
 
-				if (!anim.shapeBones.empty())
-				{
+				if (!anim.shapeBones.empty()) {
 					Log(logFile, "[INFO] Skinned mesh: Cleaning up skin data and calculating bounds.");
 				}
 
 				anim.WriteToNif(&nif);
 			}
 
-			if (options.smoothNormals)
-			{
-				for (auto &s : nif.GetShapes())
-				{
+			if (options.smoothNormals) {
+				for (auto& s : nif.GetShapes()) {
 					nif.CalcNormalsForShape(s, options.smoothSeamNormals, options.smoothAngle);
 					nif.CalcTangentsForShape(s);
 				}
@@ -216,17 +197,14 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 			std::fstream fsSave;
 			PlatformUtil::OpenFileStream(fsSave, file.ToUTF8().data(), std::ios::out | std::ios::binary);
 
-			if (nif.Save(fsSave, saveOptions) == 0)
-			{
+			if (nif.Save(fsSave, saveOptions) == 0) {
 				Log(logFile, "[SUCCESS] Saved file.");
 			}
-			else
-			{
+			else {
 				Log(logFile, "[ERROR] Failed to save file.");
 			}
 		}
-		else
-		{
+		else {
 			Log(logFile, wxString::Format("[ERROR] Failed to load '%s'.", file));
 		}
 
@@ -243,8 +221,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options)
 	frame->EndProgress();
 }
 
-void OptimizerApp::ScanTextures(const ScanOptions& options)
-{
+void OptimizerApp::ScanTextures(const ScanOptions& options) {
 	frame->StartProgress();
 
 	int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
@@ -279,131 +256,115 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 
 	wxArrayString logResult;
 
-	for (auto &file : files)
-	{
+	for (auto& file : files) {
 		wxFileName fileName(file);
 		wxString fileExt = fileName.GetExt().MakeLower();
 		frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
 
 		wxArrayString fileLog;
-		if (fileExt == "tga")
-		{
-			if (!file.Lower().Contains("facegendata"))
-			{
+		if (fileExt == "tga") {
+			if (!file.Lower().Contains("facegendata")) {
 				fileLog.Add("TGA texture files are not supported.");
 			}
 		}
-		else
-		{
+		else {
 			std::fstream fsOpen;
 			PlatformUtil::OpenFileStream(fsOpen, file.ToUTF8().data(), std::ios::in | std::ios::binary);
 
-			if (fsOpen)
-			{
+			if (fsOpen) {
 				char ddsMagic[4];
 				DDS_HEADER dds;
 				DDS_HEADER_DXT10 dds10;
 
 				fsOpen.read(ddsMagic, sizeof(ddsMagic));
-				if (std::strncmp(ddsMagic, "DDS ", sizeof(ddsMagic)) == 0)
-				{
-					fsOpen.read((char*)&dds, sizeof(DDS_HEADER));
+				if (std::strncmp(ddsMagic, "DDS ", sizeof(ddsMagic)) == 0) {
+					fsOpen.read((char*) &dds, sizeof(DDS_HEADER));
 
-					if (fsOpen)
-					{
-						if (dds.dwWidth % 4 != 0 || dds.dwHeight % 4 != 0)
-						{
-							fileLog.Add(wxString::Format("Dimensions must be divisible by 4 (currently %dx%d).", dds.dwWidth, dds.dwHeight));
+					if (fsOpen) {
+						if (dds.dwWidth % 4 != 0 || dds.dwHeight % 4 != 0) {
+							fileLog.Add(
+								wxString::Format("Dimensions must be divisible by 4 (currently %dx%d).",
+												 dds.dwWidth,
+												 dds.dwHeight));
 						}
 
-						if (dds.dwCaps2 & DDS_CUBEMAP && std::memcmp(&dds.ddspf, &DDSPF_R8G8B8, sizeof(DDS_PIXELFORMAT)) == 0)
-						{
-							fileLog.Add("Uncompressed cubemaps require an alpha channel. Use ARGB8 instead of RGB8 or compress them with DXT1/BC1.");
+						if (dds.dwCaps2 & DDS_CUBEMAP
+							&& std::memcmp(&dds.ddspf, &DDSPF_R8G8B8, sizeof(DDS_PIXELFORMAT)) == 0) {
+							fileLog.Add("Uncompressed cubemaps require an alpha channel. Use ARGB8 instead "
+										"of RGB8 or compress them with DXT1/BC1.");
 						}
 
-						if (std::memcmp(&dds.ddspf, &DDSPF_L8, sizeof(DDS_PIXELFORMAT)) == 0)
-						{
-							fileLog.Add("Unsupported L8 format (one channel with luminance flag). Use R8 or BC4 instead.");
+						if (std::memcmp(&dds.ddspf, &DDSPF_L8, sizeof(DDS_PIXELFORMAT)) == 0) {
+							fileLog.Add("Unsupported L8 format (one channel with luminance flag). Use R8 or "
+										"BC4 instead.");
 						}
 
-						if (std::memcmp(&dds.ddspf, &DDSPF_L16, sizeof(DDS_PIXELFORMAT)) == 0)
-						{
-							fileLog.Add("Unsupported L16 format (one channel with luminance flag). Use R8 or BC4 instead.");
+						if (std::memcmp(&dds.ddspf, &DDSPF_L16, sizeof(DDS_PIXELFORMAT)) == 0) {
+							fileLog.Add("Unsupported L16 format (one channel with luminance flag). Use R8 or "
+										"BC4 instead.");
 						}
 
-						if (std::memcmp(&dds.ddspf, &DDSPF_A8L8, sizeof(DDS_PIXELFORMAT)) == 0)
-						{
-							fileLog.Add("Unsupported A8L8 format (two channels with luminance flag). Use BC7 instead.");
+						if (std::memcmp(&dds.ddspf, &DDSPF_A8L8, sizeof(DDS_PIXELFORMAT)) == 0) {
+							fileLog.Add("Unsupported A8L8 format (two channels with luminance flag). Use BC7 "
+										"instead.");
 						}
 
-						if (std::memcmp(&dds.ddspf, &DDSPF_DX10, sizeof(DDS_PIXELFORMAT)) == 0)
-						{
-							if (options.targetGame == TargetGame::LE)
-							{
+						if (std::memcmp(&dds.ddspf, &DDSPF_DX10, sizeof(DDS_PIXELFORMAT)) == 0) {
+							if (options.targetGame == TargetGame::LE) {
 								fileLog.Add("DX10+ DDS formats are not supported.");
 							}
 
-							fsOpen.read((char*)&dds10, sizeof(DDS_HEADER_DXT10));
+							fsOpen.read((char*) &dds10, sizeof(DDS_HEADER_DXT10));
 
-							if (fsOpen)
-							{
-								if (dds10.dxgiFormat == DXGI_FORMAT_BC1_UNORM_SRGB ||
-									dds10.dxgiFormat == DXGI_FORMAT_BC2_UNORM_SRGB ||
-									dds10.dxgiFormat == DXGI_FORMAT_BC3_UNORM_SRGB ||
-									dds10.dxgiFormat == DXGI_FORMAT_BC7_UNORM_SRGB ||
-									dds10.dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB)
-								{
-									if (file.Lower().EndsWith("_n.dds"))
-									{
-										fileLog.Add("sRGB color space detected. Use linear color space for normal maps or lighting will be incorrect.");
+							if (fsOpen) {
+								if (dds10.dxgiFormat == DXGI_FORMAT_BC1_UNORM_SRGB
+									|| dds10.dxgiFormat == DXGI_FORMAT_BC2_UNORM_SRGB
+									|| dds10.dxgiFormat == DXGI_FORMAT_BC3_UNORM_SRGB
+									|| dds10.dxgiFormat == DXGI_FORMAT_BC7_UNORM_SRGB
+									|| dds10.dxgiFormat == DXGI_FORMAT_R8G8B8A8_UNORM_SRGB) {
+									if (file.Lower().EndsWith("_n.dds")) {
+										fileLog.Add("sRGB color space detected. Use linear color space for "
+													"normal maps or lighting will be incorrect.");
 									}
-									else
-									{
-										fileLog.Add("sRGB color space detected. Use linear color space instead if this was unintentional.");
+									else {
+										fileLog.Add("sRGB color space detected. Use linear color space "
+													"instead if this was unintentional.");
 									}
 								}
 
-								if (dds10.dxgiFormat == DXGI_FORMAT_B5G6R5_UNORM ||
-									dds10.dxgiFormat == DXGI_FORMAT_B5G5R5A1_UNORM ||
-									dds10.dxgiFormat == DXGI_FORMAT_B4G4R4A4_UNORM)
-								{
+								if (dds10.dxgiFormat == DXGI_FORMAT_B5G6R5_UNORM
+									|| dds10.dxgiFormat == DXGI_FORMAT_B5G5R5A1_UNORM
+									|| dds10.dxgiFormat == DXGI_FORMAT_B4G4R4A4_UNORM) {
 									fileLog.Add("This format will cause the game to crash on Windows 7.");
 								}
 							}
-							else
-							{
+							else {
 								fileLog.Add("File is flagged as DX10 but isn't a valid DX10 DDS header.");
 							}
 						}
-						else
-						{
-							if (std::memcmp(&dds.ddspf, &DDSPF_R5G6B5, sizeof(DDS_PIXELFORMAT)) == 0 ||
-								std::memcmp(&dds.ddspf, &DDSPF_A1R5G5B5, sizeof(DDS_PIXELFORMAT)) == 0 ||
-								std::memcmp(&dds.ddspf, &DDSPF_A4R4G4B4, sizeof(DDS_PIXELFORMAT)) == 0)
-							{
+						else {
+							if (std::memcmp(&dds.ddspf, &DDSPF_R5G6B5, sizeof(DDS_PIXELFORMAT)) == 0
+								|| std::memcmp(&dds.ddspf, &DDSPF_A1R5G5B5, sizeof(DDS_PIXELFORMAT)) == 0
+								|| std::memcmp(&dds.ddspf, &DDSPF_A4R4G4B4, sizeof(DDS_PIXELFORMAT)) == 0) {
 								fileLog.Add("This format will cause the game to crash on Windows 7.");
 							}
 						}
 					}
-					else
-					{
+					else {
 						fileLog.Add("File header isn't a valid DDS header.");
 					}
 				}
 			}
-			else
-			{
+			else {
 				Log(logFile, wxString::Format("[ERROR] Failed to load '%s'.", file));
 			}
 		}
 
-		if (!fileLog.IsEmpty())
-		{
+		if (!fileLog.IsEmpty()) {
 			Log(logFile, file);
 			logResult.Add(file);
 
-			for (auto &fl : fileLog)
-			{
+			for (auto& fl : fileLog) {
 				Log(logFile, "- " + fl);
 				logResult.Add("- " + fl);
 			}
@@ -419,27 +380,37 @@ void OptimizerApp::ScanTextures(const ScanOptions& options)
 
 	frame->EndProgress();
 
-	if (!logResult.IsEmpty())
-	{
-		wxSingleChoiceDialog resultDialog(frame, "", "Texture Scan Result", logResult, nullptr, wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
+	if (!logResult.IsEmpty()) {
+		wxSingleChoiceDialog resultDialog(frame,
+										  "",
+										  "Texture Scan Result",
+										  logResult,
+										  nullptr,
+										  wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
 		resultDialog.ShowModal();
 	}
-	else
-	{
+	else {
 		wxMessageBox("No errors were detected in the texture scan.", "Texture Scan");
 	}
 }
 
 
-Optimizer::Optimizer(wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style) : wxFrame(parent, id, title, pos, size, style)
-{
+Optimizer::Optimizer(
+	wxWindow* parent, wxWindowID id, const wxString& title, const wxPoint& pos, const wxSize& size, long style)
+	: wxFrame(parent, id, title, pos, size, style) {
 	SetSizeHints(size);
 	SetBackgroundColour(wxSystemSettings::GetColour(wxSystemColour::wxSYS_COLOUR_WINDOW));
 
 	auto sizer = new wxBoxSizer(wxVERTICAL);
 	auto sizerDir = new wxBoxSizer(wxHORIZONTAL);
 
-	dirCtrl = new wxDirPickerCtrl(this, wxID_ANY, wxGetCwd(), "Select a folder...", wxDefaultPosition, wxDefaultSize, wxDIRP_DEFAULT_STYLE | wxDIRP_DIR_MUST_EXIST);
+	dirCtrl = new wxDirPickerCtrl(this,
+								  wxID_ANY,
+								  wxGetCwd(),
+								  "Select a folder...",
+								  wxDefaultPosition,
+								  wxDefaultSize,
+								  wxDIRP_DEFAULT_STYLE | wxDIRP_DIR_MUST_EXIST);
 	sizerDir->Add(dirCtrl, 1, wxALL, 5);
 
 	cbRecursive = new wxCheckBox(this, wxID_ANY, "Sub Directories");
@@ -481,7 +452,10 @@ Optimizer::Optimizer(wxWindow* parent, wxWindowID id, const wxString& title, con
 
 	sizer->Add(sbOptions, 0, wxALL | wxEXPAND, 5);
 
-	auto sbExtras = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, "Extras - don't blindly use for everything"), wxVERTICAL);
+	auto sbExtras = new wxStaticBoxSizer(new wxStaticBox(this,
+														 wxID_ANY,
+														 "Extras - don't blindly use for everything"),
+										 wxVERTICAL);
 
 	auto sizerExtras = new wxFlexGridSizer(0, 2, 0, 0);
 	sizerExtras->AddGrowableCol(1);
@@ -497,7 +471,15 @@ Optimizer::Optimizer(wxWindow* parent, wxWindowID id, const wxString& title, con
 	lbSmoothAngle->Wrap(-1);
 	sizerNormals->Add(lbSmoothAngle, 0, wxALIGN_CENTER_VERTICAL | wxALL, 5);
 
-	numSmoothAngle = new wxSpinCtrl(sbExtras->GetStaticBox(), wxID_ANY, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS, 0, 180, 60);
+	numSmoothAngle = new wxSpinCtrl(sbExtras->GetStaticBox(),
+									wxID_ANY,
+									wxEmptyString,
+									wxDefaultPosition,
+									wxDefaultSize,
+									wxSP_ARROW_KEYS,
+									0,
+									180,
+									60);
 	numSmoothAngle->Enable(false);
 	sizerNormals->Add(numSmoothAngle, 1, wxALL, 5);
 
@@ -557,8 +539,7 @@ Optimizer::Optimizer(wxWindow* parent, wxWindowID id, const wxString& title, con
 	btScanTextures->Bind(wxEVT_BUTTON, &Optimizer::btScanTexturesClicked, this);
 }
 
-Optimizer::~Optimizer()
-{
+Optimizer::~Optimizer() {
 	// Unbind Events
 	Unbind(wxEVT_CLOSE_WINDOW, &Optimizer::onClose, this);
 	dirCtrl->Unbind(wxEVT_DIRPICKER_CHANGED, &Optimizer::dirCtrlChanged, this);
@@ -567,34 +548,27 @@ Optimizer::~Optimizer()
 	btScanTextures->Unbind(wxEVT_BUTTON, &Optimizer::btScanTexturesClicked, this);
 }
 
-void Optimizer::onClose(wxCloseEvent& event)
-{
-	if (isProcessing)
-	{
+void Optimizer::onClose(wxCloseEvent& event) {
+	if (isProcessing) {
 		isProcessing = false;
 		event.Veto();
 	}
-	else
-	{
+	else {
 		Destroy();
 	}
 }
 
-void Optimizer::dirCtrlChanged(wxFileDirPickerEvent& event)
-{
+void Optimizer::dirCtrlChanged(wxFileDirPickerEvent& event) {
 	btOptimize->Enable(!event.GetPath().IsEmpty());
 }
 
-void Optimizer::cbSmoothNormalsChecked(wxCommandEvent& event)
-{
+void Optimizer::cbSmoothNormalsChecked(wxCommandEvent& event) {
 	numSmoothAngle->Enable(event.IsChecked());
 	cbSmoothSeamNormals->Enable(event.IsChecked());
 }
 
-void Optimizer::btOptimizeClicked(wxCommandEvent& event)
-{
-	if (isProcessing)
-	{
+void Optimizer::btOptimizeClicked(wxCommandEvent& event) {
+	if (isProcessing) {
 		isProcessing = false;
 		return;
 	}
@@ -623,10 +597,8 @@ void Optimizer::btOptimizeClicked(wxCommandEvent& event)
 	isProcessing = false;
 }
 
-void Optimizer::btScanTexturesClicked(wxCommandEvent& event)
-{
-	if (isProcessing)
-	{
+void Optimizer::btScanTexturesClicked(wxCommandEvent& event) {
+	if (isProcessing) {
 		isProcessing = false;
 		return;
 	}
@@ -648,8 +620,7 @@ void Optimizer::btScanTexturesClicked(wxCommandEvent& event)
 	isProcessing = false;
 }
 
-void Optimizer::StartProgress(const wxString& msg)
-{
+void Optimizer::StartProgress(const wxString& msg) {
 	if (progressStack.empty()) {
 		progressVal = 0;
 		progressStack.emplace_back(0, 10000);
@@ -665,8 +636,7 @@ void Optimizer::StartProgress(const wxString& msg)
 	}
 }
 
-void Optimizer::StartSubProgress(int min, int max)
-{
+void Optimizer::StartSubProgress(int min, int max) {
 	int range = progressStack.back().second - progressStack.front().first;
 	float mindiv = min / 100.0f;
 	float maxdiv = max / 100.0f;
@@ -675,8 +645,7 @@ void Optimizer::StartSubProgress(int min, int max)
 	progressStack.emplace_back(progressStack.front().first + minoff, progressStack.front().first + maxoff);
 }
 
-void Optimizer::UpdateProgress(int val, const wxString& msg)
-{
+void Optimizer::UpdateProgress(int val, const wxString& msg) {
 	if (progressStack.empty())
 		return;
 
@@ -692,8 +661,7 @@ void Optimizer::UpdateProgress(int val, const wxString& msg)
 	progressBar->SetValue(progressVal);
 }
 
-void Optimizer::EndProgress(const wxString& msg)
-{
+void Optimizer::EndProgress(const wxString& msg) {
 	if (progressStack.empty())
 		return;
 
