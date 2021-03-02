@@ -4,9 +4,12 @@ See the included LICENSE file
 */
 
 #include "Optimizer.hpp"
+#include "Anim.hpp"
 #include "DDS.h"
+#include "NifFile.hpp"
 #include "PlatformUtil.hpp"
 
+using namespace nifly;
 
 IMPLEMENT_APP(OptimizerApp)
 wxDECLARE_APP(OptimizerApp);

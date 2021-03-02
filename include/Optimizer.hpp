@@ -11,11 +11,6 @@ See the included LICENSE file
 #include <wx/spinctrl.h>
 #include <wx/wx.h>
 
-#include "Anim.hpp"
-#include "NifFile.hpp"
-
-using namespace nifly;
-
 enum TargetGame { SSE, LE };
 
 struct OptimizerOptions {
