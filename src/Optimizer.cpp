@@ -352,6 +352,13 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 								fileLog.Add("This format will cause the game to crash on Windows 7.");
 							}
 						}
+
+						if (!(dds.dwFlags & DDS_HEADER_FLAGS_MIPMAP)) {
+							if (options.checkMipmaps) {
+								fileLog.Add("Mipmaps are missing. Mipmaps greatly improve performance/memory "
+											"usage and reduce artifacts in the distance.");
+							}
+						}
 					}
 					else {
 						fileLog.Add("File header isn't a valid DDS header.");
@@ -501,6 +508,11 @@ Optimizer::Optimizer(
 
 	auto sizerBottom = new wxBoxSizer(wxHORIZONTAL);
 
+	cbMipmapsCheck = new wxCheckBox(this, wxID_ANY, "Check Mipmaps");
+	cbMipmapsCheck->SetValue(true);
+	cbMipmapsCheck->SetToolTip("Check if all texture files have mipmaps in the texture scan.");
+	sizerBottom->Add(cbMipmapsCheck, 0, wxALL, 5);
+
 	cbWriteLog = new wxCheckBox(this, wxID_ANY, "Write Log");
 	cbWriteLog->SetValue(true);
 	cbWriteLog->SetToolTip("Toggles writing of a log file with information about the optimization process.");
@@ -614,6 +626,7 @@ void Optimizer::btScanTexturesClicked(wxCommandEvent& event) {
 	options.folder = dirCtrl->GetPath();
 	options.recursive = cbRecursive->GetValue();
 	options.targetGame = rbSSE->GetValue() ? TargetGame::SSE : TargetGame::LE;
+	options.checkMipmaps = cbMipmapsCheck->GetValue();
 	options.writeLog = cbWriteLog->GetValue();
 
 	wxGetApp().ScanTextures(options);

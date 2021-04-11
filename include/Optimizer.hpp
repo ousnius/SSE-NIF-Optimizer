@@ -31,6 +31,7 @@ struct ScanOptions {
 	wxString folder;
 	bool recursive = true;
 	TargetGame targetGame = TargetGame::SSE;
+	bool checkMipmaps = true;
 	bool writeLog = true;
 };
 
@@ -86,6 +87,7 @@ private:
 	wxCheckBox* cbCleanSkinning = nullptr;
 	wxCheckBox* cbCalculateBounds = nullptr;
 	wxCheckBox* cbRemoveParallax = nullptr;
+	wxCheckBox* cbMipmapsCheck = nullptr;
 	wxCheckBox* cbWriteLog = nullptr;
 	wxRadioButton* rbSSE = nullptr;
 	wxRadioButton* rbLE = nullptr;
