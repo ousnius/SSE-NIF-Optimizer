@@ -16,7 +16,7 @@ bool AnimInfo::AddShapeBone(const std::string& shape, const std::string& boneNam
 		if (!bone.compare(boneName))
 			return false;
 
-	shapeSkinning[shape].boneNames[boneName] = shapeBones[shape].size();
+	shapeSkinning[shape].boneNames[boneName] = static_cast<int>(shapeBones[shape].size());
 	shapeBones[shape].push_back(boneName);
 	AnimSkeleton::getInstance().RefBone(boneName);
 	RecalcXFormSkinToBone(shape, boneName);
@@ -122,7 +122,7 @@ void AnimSkin::InsertVertexIndices(const std::vector<uint16_t>& indices) {
 	std::vector<int> indexExpand = GenerateIndexExpandMap(indices, highestAdded + 1);
 
 	for (auto& w : boneWeights) {
-		ApplyIndexMapToMapKeys(w.second.weights, indexExpand, indices.size());
+		ApplyIndexMapToMapKeys(w.second.weights, indexExpand, static_cast<int>(indices.size()));
 	}
 }
 
