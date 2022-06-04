@@ -116,8 +116,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	}
 	Log(logFile);
 
-	Log(logFile, wxString::Format("[INFO] %d file(s) were found.", fileCount));
 	size_t fileCount = options.files.GetCount();
+	Log(logFile, wxString::Format("[INFO] %zu file(s) were found.", fileCount));
 	Log(logFile, "----------------------------------------------------------------------");
 
 	float prog = 0.0f;
@@ -295,7 +295,7 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 	Log(logFile);
 
 	size_t fileCount = files.GetCount();
-	Log(logFile, wxString::Format("[INFO] %d file(s) were found.", fileCount));
+	Log(logFile, wxString::Format("[INFO] %zu file(s) were found.", fileCount));
 	Log(logFile, "----------------------------------------------------------------------");
 
 	float prog = 0.0f;
