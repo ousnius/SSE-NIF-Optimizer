@@ -14,6 +14,7 @@ See the included LICENSE file
 enum TargetGame { SSE, LE };
 
 struct OptimizerOptions {
+	wxArrayString files;
 	wxString folder;
 	bool recursive = true;
 	bool smoothNormals = false;
@@ -24,7 +25,7 @@ struct OptimizerOptions {
 	bool calculateBounds = true;
 	bool removeParallax = true;
 	TargetGame targetGame = TargetGame::SSE;
-	bool writeLog = true;
+	wxString logFilePath;
 };
 
 struct ScanOptions {
@@ -44,6 +45,7 @@ public:
 	virtual void OnInitCmdLine(wxCmdLineParser& parser);
 	virtual bool OnCmdLineParsed(wxCmdLineParser& parser);
 
+	void HandleCmdLine();
 	void Optimize(const OptimizerOptions& options);
 	void ScanTextures(const ScanOptions& options);
 
@@ -57,16 +59,26 @@ public:
 
 private:
 	Optimizer* frame = nullptr;
-	wxArrayString cmdFiles;
+
+	wxString cmdOptimize;
+	wxString cmdLogPath;
+	wxArrayString cmdPaths;
+	bool cmdRecursive = false;
+	bool cmdHeadparts = false;
 };
 
-static const wxCmdLineEntryDesc cmdLineDesc[] = {{wxCMD_LINE_PARAM,
-												  "f",
-												  "files",
-												  "loads the files",
-												  wxCMD_LINE_VAL_STRING,
-												  wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
-												 {wxCMD_LINE_NONE}};
+static const wxCmdLineEntryDesc cmdLineDesc[]
+	= {{wxCMD_LINE_OPTION, "opt", "optimize", "Optimize for given target", wxCMD_LINE_VAL_STRING},
+	   {wxCMD_LINE_OPTION, "log", "log", "Path to log file", wxCMD_LINE_VAL_STRING},
+	   {wxCMD_LINE_SWITCH, "recursive", "recursive", "Recursively parse all directories"},
+	   {wxCMD_LINE_SWITCH, "headparts", "headparts", "Optimize files as headparts"},
+	   {wxCMD_LINE_PARAM,
+		"p",
+		"path",
+		"Paths to files and/or directories",
+		wxCMD_LINE_VAL_STRING,
+		wxCMD_LINE_PARAM_OPTIONAL | wxCMD_LINE_PARAM_MULTIPLE},
+	   wxCMD_LINE_DESC_END};
 
 
 class Optimizer : public wxFrame {
@@ -110,6 +122,9 @@ public:
 			  const wxSize& size = wxSize(475, 340),
 			  long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~Optimizer();
+
+	void StartOptimize();
+	void EndOptimize();
 
 	void StartProgress(const wxString& msg = "");
 	void EndProgress(const wxString& msg = "");

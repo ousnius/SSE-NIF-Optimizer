@@ -11,7 +11,7 @@ See the included LICENSE file
 
 using namespace nifly;
 
-IMPLEMENT_APP(OptimizerApp)
+wxIMPLEMENT_APP(OptimizerApp);
 wxDECLARE_APP(OptimizerApp);
 
 bool OptimizerApp::OnInit() {
@@ -22,6 +22,7 @@ bool OptimizerApp::OnInit() {
 	frame->Show(true);
 	SetTopWindow(frame);
 
+	HandleCmdLine();
 	return true;
 }
 
@@ -34,35 +35,75 @@ void OptimizerApp::OnInitCmdLine(wxCmdLineParser& parser) {
 }
 
 bool OptimizerApp::OnCmdLineParsed(wxCmdLineParser& parser) {
-	cmdFiles.Clear();
+	parser.Found("opt", &cmdOptimize);
+	parser.Found("log", &cmdLogPath);
+
+	cmdRecursive = parser.Found("recursive");
+	cmdHeadparts = parser.Found("headparts");
+
+	cmdPaths.Clear();
 
 	for (size_t i = 0; i < parser.GetParamCount(); i++)
-		cmdFiles.Add(parser.GetParam(i));
+		cmdPaths.Add(parser.GetParam(i));
 
 	return true;
 }
 
+void OptimizerApp::HandleCmdLine() {
+	if (!cmdPaths.IsEmpty()) {
+		OptimizerOptions options;
+		options.recursive = cmdRecursive;
+		options.headParts = cmdHeadparts;
+		options.targetGame = cmdOptimize == "LE" ? TargetGame::LE : TargetGame::SSE;
+		options.logFilePath = cmdLogPath;
+
+		for (auto& path : cmdPaths) {
+			if (path.IsEmpty())
+				continue;
+
+			wxFileName fn(path);
+			if (fn.FileExists()) {
+				wxString ext = fn.GetExt().MakeLower();
+				if (ext != "nif" && ext != "btr" && ext != "bto")
+					continue;
+
+				options.files.Add(path);
+			}
+			else {
+				if (!wxDir::Exists(path))
+					continue;
+
+				int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
+				if (cmdRecursive)
+					folderFlags |= wxDIR_DIRS;
+
+				wxDir::GetAllFiles(path, &options.files, "*.nif", folderFlags);
+				wxDir::GetAllFiles(path, &options.files, "*.btr", folderFlags);
+				wxDir::GetAllFiles(path, &options.files, "*.bto", folderFlags);
+			}
+		}
+
+		Optimize(options);
+
+		if (frame)
+			frame->Close();
+	}
+}
+
 void OptimizerApp::Optimize(const OptimizerOptions& options) {
-	frame->StartProgress();
-
-	int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
-	if (options.recursive)
-		folderFlags |= wxDIR_DIRS;
-
-	wxArrayString files;
-	wxDir::GetAllFiles(options.folder, &files, "*.nif", folderFlags);
-	wxDir::GetAllFiles(options.folder, &files, "*.btr", folderFlags);
-	wxDir::GetAllFiles(options.folder, &files, "*.bto", folderFlags);
+	if (frame)
+		frame->StartOptimize();
 
 	wxFile logFile;
-	if (options.writeLog)
-		logFile.Open("SSE NIF Optimizer.txt", wxFile::OpenMode::write);
+	if (!options.logFilePath.IsEmpty())
+		logFile.Open(options.logFilePath, wxFile::OpenMode::write);
 
 	Log(logFile, "==== SSE NIF Optimizer v3.1.0 by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
-	Log(logFile, wxString::Format("- Folder: '%s'", options.folder));
+	if (!options.folder.IsEmpty())
+		Log(logFile, wxString::Format("- Folder: '%s'", options.folder));
 	Log(logFile, wxString::Format("- Sub Directories: %s", options.recursive ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Head Parts Only: %s", options.headParts ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Clean Skinning: %s", options.cleanSkinning ? "Yes" : "No"));
@@ -75,8 +116,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	}
 	Log(logFile);
 
-	size_t fileCount = files.GetCount();
 	Log(logFile, wxString::Format("[INFO] %d file(s) were found.", fileCount));
+	size_t fileCount = options.files.GetCount();
 	Log(logFile, "----------------------------------------------------------------------");
 
 	float prog = 0.0f;
@@ -85,10 +126,12 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	if (fileCount > 0)
 		step /= fileCount;
 
-	for (auto& file : files) {
+	for (auto& file : options.files) {
 		wxFileName fileName(file);
 		wxString fileExt = fileName.GetExt().MakeLower();
-		frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
+
+		if (frame)
+			frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
 
 		Log(logFile, wxString::Format("Loading '%s'...", file));
 
@@ -213,19 +256,23 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 
 		Log(logFile, "----------------------------------------------------------------------");
 
-		wxSafeYield(frame);
+		if (frame) {
+			wxSafeYield(frame);
 
-		if (!frame->isProcessing)
-			break;
+			if (!frame->isProcessing)
+				break;
+		}
 	}
 
 	Log(logFile, "Program finished.");
 
-	frame->EndProgress();
+	if (frame)
+		frame->EndOptimize();
 }
 
 void OptimizerApp::ScanTextures(const ScanOptions& options) {
-	frame->StartProgress();
+	if (frame)
+		frame->StartProgress();
 
 	int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
 	if (options.recursive)
@@ -262,7 +309,9 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 	for (auto& file : files) {
 		wxFileName fileName(file);
 		wxString fileExt = fileName.GetExt().MakeLower();
-		frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
+
+		if (frame)
+			frame->UpdateProgress(prog += step, wxString::Format("'%s'...", fileName.GetFullName()));
 
 		wxArrayString fileLog;
 		if (fileExt == "tga") {
@@ -380,27 +429,31 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 			}
 		}
 
-		wxSafeYield(frame);
+		if (frame) {
+			wxSafeYield(frame);
 
-		if (!frame->isProcessing)
-			break;
+			if (!frame->isProcessing)
+				break;
+		}
 	}
 
 	Log(logFile, "Program finished.");
 
-	frame->EndProgress();
+	if (frame) {
+		frame->EndProgress();
 
-	if (!logResult.IsEmpty()) {
-		wxSingleChoiceDialog resultDialog(frame,
-										  "",
-										  "Texture Scan Result",
-										  logResult,
-										  nullptr,
-										  wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
-		resultDialog.ShowModal();
-	}
-	else {
-		wxMessageBox("No errors were detected in the texture scan.", "Texture Scan");
+		if (!logResult.IsEmpty()) {
+			wxSingleChoiceDialog resultDialog(frame,
+											  "",
+											  "Texture Scan Result",
+											  logResult,
+											  nullptr,
+											  wxDEFAULT_DIALOG_STYLE | wxOK | wxCENTRE | wxRESIZE_BORDER);
+			resultDialog.ShowModal();
+		}
+		else {
+			wxMessageBox("No errors were detected in the texture scan.", "Texture Scan");
+		}
 	}
 }
 
@@ -588,10 +641,6 @@ void Optimizer::btOptimizeClicked(wxCommandEvent& event) {
 		return;
 	}
 
-	btOptimize->SetLabel("Cancel");
-	btScanTextures->Disable();
-	isProcessing = true;
-
 	OptimizerOptions options;
 	options.folder = dirCtrl->GetPath();
 	options.recursive = cbRecursive->GetValue();
@@ -603,13 +652,19 @@ void Optimizer::btOptimizeClicked(wxCommandEvent& event) {
 	options.calculateBounds = cbCalculateBounds->GetValue();
 	options.removeParallax = cbRemoveParallax->GetValue();
 	options.targetGame = rbSSE->GetValue() ? TargetGame::SSE : TargetGame::LE;
-	options.writeLog = cbWriteLog->GetValue();
+
+	if (cbWriteLog->IsChecked())
+		options.logFilePath = "SSE NIF Optimizer.txt";
+	
+	int folderFlags = wxDIR_FILES | wxDIR_HIDDEN;
+	if (options.recursive)
+		folderFlags |= wxDIR_DIRS;
+
+	wxDir::GetAllFiles(options.folder, &options.files, "*.nif", folderFlags);
+	wxDir::GetAllFiles(options.folder, &options.files, "*.btr", folderFlags);
+	wxDir::GetAllFiles(options.folder, &options.files, "*.bto", folderFlags);
 
 	wxGetApp().Optimize(options);
-
-	btOptimize->SetLabel("Optimize");
-	btScanTextures->Enable();
-	isProcessing = false;
 }
 
 void Optimizer::btScanTexturesClicked(wxCommandEvent& event) {
@@ -633,6 +688,22 @@ void Optimizer::btScanTexturesClicked(wxCommandEvent& event) {
 
 	btScanTextures->SetLabel("Scan Textures");
 	btOptimize->Enable();
+	isProcessing = false;
+}
+
+void Optimizer::StartOptimize() {
+	btOptimize->SetLabel("Cancel");
+	btScanTextures->Disable();
+	isProcessing = true;
+
+	StartProgress();
+}
+
+void Optimizer::EndOptimize() {
+	EndProgress();
+
+	btOptimize->SetLabel("Optimize");
+	btScanTextures->Enable();
 	isProcessing = false;
 }
 
