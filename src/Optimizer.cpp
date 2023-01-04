@@ -98,7 +98,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	if (!options.logFilePath.IsEmpty())
 		logFile.Open(options.logFilePath, wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.1.0 by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.2.0 by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -237,7 +237,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 				}
 			}
 
-			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.1.0.");
+			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.2.0.");
 			nif.FinalizeData();
 
 			NifSaveOptions saveOptions;
@@ -290,7 +290,7 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer (Texture Scan).txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.1.0 (Texture Scan) by ousnius ====");
+	Log(logFile, "==== SSE NIF Optimizer v3.2.0 (Texture Scan) by ousnius ====");
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
