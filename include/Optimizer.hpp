@@ -24,6 +24,8 @@ struct OptimizerOptions {
 	bool cleanSkinning = true;
 	bool calculateBounds = true;
 	bool removeParallax = true;
+	bool fixBSXFlags = true;
+	bool fixShaderFlags = true;
 	TargetGame targetGame = TargetGame::SSE;
 	wxString logFilePath;
 };
@@ -99,6 +101,8 @@ private:
 	wxCheckBox* cbCleanSkinning = nullptr;
 	wxCheckBox* cbCalculateBounds = nullptr;
 	wxCheckBox* cbRemoveParallax = nullptr;
+	wxCheckBox* cbFixBSXFlags = nullptr;
+	wxCheckBox* cbFixShaderFlags = nullptr;
 	wxCheckBox* cbMipmapsCheck = nullptr;
 	wxCheckBox* cbWriteLog = nullptr;
 	wxRadioButton* rbSSE = nullptr;
@@ -119,7 +123,7 @@ public:
 			  wxWindowID id = wxID_ANY,
 			  const wxString& title = "SSE NIF Optimizer v3.1.0",
 			  const wxPoint& pos = wxDefaultPosition,
-			  const wxSize& size = wxSize(475, 340),
+			  const wxSize& size = wxSize(525, 340),
 			  long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
 	~Optimizer();
 

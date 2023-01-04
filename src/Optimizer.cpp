@@ -109,6 +109,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	Log(logFile, wxString::Format("- Clean Skinning: %s", options.cleanSkinning ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Calculate Bounds: %s", options.calculateBounds ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Remove Parallax: %s", options.removeParallax ? "Yes" : "No"));
+	Log(logFile, wxString::Format("- Fix BSX Flags: %s", options.fixBSXFlags ? "Yes" : "No"));
+	Log(logFile, wxString::Format("- Fix Shader Flags: %s", options.fixShaderFlags ? "Yes" : "No"));
 	Log(logFile, wxString::Format("- Smooth Normals: %s", options.smoothNormals ? "Yes" : "No"));
 	if (options.smoothNormals) {
 		Log(logFile, wxString::Format("- Smooth Angle: %d", options.smoothAngle));
@@ -147,6 +149,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 			optOptions.headParts = options.headParts;
 			optOptions.calcBounds = options.calculateBounds;
 			optOptions.removeParallax = options.removeParallax;
+			optOptions.fixBSXFlags = options.fixBSXFlags;
+			optOptions.fixShaderFlags = options.fixShaderFlags;
 
 			NiVersion version;
 			if (options.targetGame == TargetGame::SSE) {
@@ -485,9 +489,10 @@ Optimizer::Optimizer(
 
 	auto sbOptions = new wxStaticBoxSizer(new wxStaticBox(this, wxID_ANY, "Options"), wxVERTICAL);
 
-	auto sizerOptions = new wxFlexGridSizer(0, 2, 0, 0);
+	auto sizerOptions = new wxFlexGridSizer(0, 3, 0, 0);
 	sizerOptions->AddGrowableCol(0);
 	sizerOptions->AddGrowableCol(1);
+	sizerOptions->AddGrowableCol(2);
 	sizerOptions->SetFlexibleDirection(wxBOTH);
 	sizerOptions->SetNonFlexibleGrowMode(wxFLEX_GROWMODE_SPECIFIED);
 
@@ -510,6 +515,16 @@ Optimizer::Optimizer(
 	cbRemoveParallax->SetToolTip("Removes parallax flags and texture paths.");
 	cbRemoveParallax->SetValue(true);
 	sizerOptions->Add(cbRemoveParallax, 0, wxALL, 5);
+
+	cbFixBSXFlags = new wxCheckBox(sbOptions->GetStaticBox(), wxID_ANY, "Fix BSX Flags");
+	cbFixBSXFlags->SetToolTip("Fixes invalid BSX flags combinations (external emittance).");
+	cbFixBSXFlags->SetValue(true);
+	sizerOptions->Add(cbFixBSXFlags, 0, wxALL, 5);
+
+	cbFixShaderFlags = new wxCheckBox(sbOptions->GetStaticBox(), wxID_ANY, "Fix Shader Flags");
+	cbFixShaderFlags->SetToolTip("Fixes invalid shader flags combinations (environment mapping).");
+	cbFixShaderFlags->SetValue(true);
+	sizerOptions->Add(cbFixShaderFlags, 0, wxALL, 5);
 
 	sbOptions->Add(sizerOptions, 1, wxEXPAND, 5);
 
@@ -651,6 +666,8 @@ void Optimizer::btOptimizeClicked(wxCommandEvent& event) {
 	options.cleanSkinning = cbCleanSkinning->GetValue();
 	options.calculateBounds = cbCalculateBounds->GetValue();
 	options.removeParallax = cbRemoveParallax->GetValue();
+	options.fixBSXFlags = cbFixBSXFlags->GetValue();
+	options.fixShaderFlags = cbFixShaderFlags->GetValue();
 	options.targetGame = rbSSE->GetValue() ? TargetGame::SSE : TargetGame::LE;
 
 	if (cbWriteLog->IsChecked())
