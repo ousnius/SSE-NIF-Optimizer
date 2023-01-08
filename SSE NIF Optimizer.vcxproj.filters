@@ -86,4 +86,7 @@
     <None Include="README.md" />
     <None Include="LICENSE" />
   </ItemGroup>
+  <ItemGroup>
+    <Image Include="nifopt.ico" />
+  </ItemGroup>
 </Project>
