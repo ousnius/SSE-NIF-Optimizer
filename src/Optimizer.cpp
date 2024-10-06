@@ -19,6 +19,7 @@ bool OptimizerApp::OnInit() {
 		return false;
 
 	frame = new Optimizer(nullptr);
+	frame->SetIcon(wxIcon("aaaaICON"));
 	frame->Show(true);
 	SetTopWindow(frame);
 
@@ -98,7 +99,7 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 	if (!options.logFilePath.IsEmpty())
 		logFile.Open(options.logFilePath, wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.2.0 by ousnius ====");
+	Log(logFile, wxString::Format("==== %s by ousnius ====", ProgramVersionLabel));
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");
@@ -237,7 +238,8 @@ void OptimizerApp::Optimize(const OptimizerOptions& options) {
 				}
 			}
 
-			nif.GetHeader().SetExportInfo("Optimized with SSE NIF Optimizer v3.2.0.");
+			std::string exportInfo = std::string("Optimized with ") + ProgramVersionLabel + ".";
+			nif.GetHeader().SetExportInfo(exportInfo);
 			nif.FinalizeData();
 
 			NifSaveOptions saveOptions;
@@ -290,7 +292,7 @@ void OptimizerApp::ScanTextures(const ScanOptions& options) {
 	if (options.writeLog)
 		logFile.Open("SSE NIF Optimizer (Texture Scan).txt", wxFile::OpenMode::write);
 
-	Log(logFile, "==== SSE NIF Optimizer v3.2.0 (Texture Scan) by ousnius ====");
+	Log(logFile, wxString::Format("==== %s (Texture Scan) by ousnius ====", ProgramVersionLabel));
 	Log(logFile, "----------------------------------------------------------------------");
 
 	Log(logFile, "[INFO] Options:");

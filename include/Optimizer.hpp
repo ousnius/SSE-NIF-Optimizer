@@ -11,6 +11,8 @@ See the included LICENSE file
 #include <wx/spinctrl.h>
 #include <wx/wx.h>
 
+constexpr auto ProgramVersionLabel = "SSE NIF Optimizer v3.2.1";
+
 enum TargetGame { SSE, LE };
 
 struct OptimizerOptions {
@@ -121,7 +123,7 @@ public:
 
 	Optimizer(wxWindow* parent,
 			  wxWindowID id = wxID_ANY,
-			  const wxString& title = "SSE NIF Optimizer v3.2.0",
+			  const wxString& title = ProgramVersionLabel,
 			  const wxPoint& pos = wxDefaultPosition,
 			  const wxSize& size = wxSize(525, 340),
 			  long style = wxDEFAULT_FRAME_STYLE | wxTAB_TRAVERSAL);
