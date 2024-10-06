@@ -197,6 +197,7 @@
     <ClCompile Include="external\nifly\src\Factory.cpp" />
     <ClCompile Include="external\nifly\src\Geometry.cpp" />
     <ClCompile Include="external\nifly\src\NifFile.cpp" />
+    <ClCompile Include="external\nifly\src\NifUtil.cpp" />
     <ClCompile Include="external\nifly\src\Nodes.cpp" />
     <ClCompile Include="external\nifly\src\Object3d.cpp" />
     <ClCompile Include="external\nifly\src\Objects.cpp" />
