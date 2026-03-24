@@ -23,6 +23,9 @@ bool OptimizerApp::OnInit() {
 	frame->Show(true);
 	SetTopWindow(frame);
 
+	// Convert initial size to DIP
+	frame->SetSize(frame->FromDIP(frame->GetSize()));
+
 	HandleCmdLine();
 	return true;
 }
