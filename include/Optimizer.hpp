@@ -11,7 +11,7 @@ See the included LICENSE file
 #include <wx/spinctrl.h>
 #include <wx/wx.h>
 
-constexpr auto ProgramVersionLabel = "SSE NIF Optimizer v3.2.1";
+constexpr auto ProgramVersionLabel = "SSE NIF Optimizer v3.2.2";
 
 enum TargetGame { SSE, LE };
 
